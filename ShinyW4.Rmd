@@ -1,0 +1,87 @@
+---
+title: 'Coursera - Developing Data Products : Week4 Assignment'
+author: "Olga SILVA"
+date: "24 octobre 2018"
+output:
+ slidy_presentation: default
+runtime: shiny
+---
+## Create a Shiny Application
+I wrote a shiny application, to make a wordcloud from a famous Winston Churchill's speech : "Blood, Toil, Tears and Sweat"
+
+I wanted to use some other applications that we didn't see in the course. I use de shiny tutorials to inspire myself.
+
+The user can choose the minimum frequency of words and the maximum number of words. Then, the plot will display the wordcloud, with a lot of colors
+
+Here is the link to the shiny Server: https://olgasilva.shinyapps.io/WorldCloud/
+
+***
+
+## Create a Shiny Application
+For the assignement, I also create these slides, to show you the application and the R Code. 
+
+In the next slide you will find the R code who allows me to make the wordcloud, and the shiny application that you can use to test the application. 
+
+To embedded the application I use the option runtime Shiny
+
+***
+
+## R CODE
+
+```{r libraries, echo=TRUE}
+library(shiny)
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+```
+
+```{r readtext, echo=TRUE}
+text <- readLines("Winston_Churchill.txt")
+docs <- Corpus(VectorSource(text))
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, removeWords, stopwords("english"))
+docs <- tm_map(docs, stripWhitespace)
+set.seed(1234)
+
+dtm <- TermDocumentMatrix(docs)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+```
+
+---
+runtime: shiny
+output: html_document
+---
+```{r ui, echo=TRUE}
+ui <- fluidPage(
+  # Application title
+  titlePanel("Blood, Toil, Tears and Sweat - Wiston Churchill"),
+  
+  # Sidebar with a slider and selection inputs
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("freq","Minimum Frequency:",min = 1,  max = 50, value = 15),
+      sliderInput("max","Maximum Number of Words:",min = 1,  max = 300,  value = 100)
+      
+    ),
+    mainPanel(
+      plotOutput("graphplot")
+    )
+  )
+)
+```
+
+```{r app, echo=TRUE}
+server <- function(input, output) {
+  output$graphplot <- renderPlot({
+    
+    wordcloud(words = d$word, freq = d$freq, min.freq = input$freq,
+              max.words=input$max, random.order=FALSE, rot.per=0.35, 
+              colors=brewer.pal(8, "Dark2"))
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
